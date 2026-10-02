@@ -1,0 +1,80 @@
+{
+  "name": "@inverz/delivery-status",
+  "version": "1.0.0",
+  "description": "Parcel tracking for React: paste one or many tracking numbers, detect the carrier and show a Thai delivery timeline. Server helper set up from .env: Thailand Post, Flash, J&T, Ninja Van, DHL eCommerce, Shopee, Lazada, TikTok Shop, TrackingMore, 17TRACK, Track123, AfterShip, Ship24",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js",
+      "require": "./dist/core.cjs"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js",
+      "require": "./dist/server.cjs"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    ".env.example"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "vite --config vite.demo.config.js",
+    "build": "npm run env:example && vite build && cp src/style.css src/index.d.ts src/core.d.ts src/server.d.ts dist/",
+    "build:demo": "vite build --config vite.demo.config.js",
+    "deploy:demo": "npm run build:demo && rm -rf ../hosting/public/deliverystatus && cp -R demo-dist ../hosting/public/deliverystatus && firebase deploy --only hosting --config ../hosting/firebase.json",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build",
+    "env:example": "node scripts/env-example.js"
+  },
+  "keywords": [
+    "react",
+    "thai",
+    "tracking",
+    "parcel",
+    "delivery",
+    "shipment",
+    "thailand-post",
+    "kerry",
+    "flash-express",
+    "jt-express",
+    "เลขพัสดุ",
+    "ติดตามพัสดุ",
+    "ไปรษณีย์ไทย",
+    "ninja-van",
+    "shopee",
+    "lazada",
+    "tiktok-shop",
+    "17track",
+    "aftership"
+  ],
+  "license": "MIT",
+  "author": "Inverz Solutions Co.,Ltd.",
+  "homepage": "https://inverz-npm-package.web.app/deliverystatus/",
+  "peerDependencies": {
+    "react": ">=16.9"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "vite": "^8.3.1"
+  }
+}

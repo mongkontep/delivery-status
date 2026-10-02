@@ -1,0 +1,495 @@
+/*
+ * Optional theme for @inverz/delivery-status. Override --tds-* (or the shared --tdp-* variables
+ * of the other Inverz packages): --tds-font --tds-brand --tds-surface --tds-surface-muted --tds-border
+ * --tds-border-strong --tds-text --tds-text-muted --tds-success --tds-warning --tds-danger --tds-focus-ring
+ */
+
+.tds {
+  --_font: var(--tds-font, var(--tdp-font, inherit));
+  --_brand: var(--tds-brand, var(--tdp-brand, #298bec));
+  --_surface: var(--tds-surface, var(--tdp-surface, #ffffff));
+  --_surface-muted: var(--tds-surface-muted, var(--tdp-surface-muted, #f1f5f9));
+  --_border: var(--tds-border, var(--tdp-border, #e4e9f0));
+  --_border-strong: var(--tds-border-strong, var(--tdp-border-strong, #cfd7e2));
+  --_text: var(--tds-text, var(--tdp-text, #0f1b2d));
+  --_text-muted: var(--tds-text-muted, var(--tdp-text-muted, #64748b));
+  --_success: var(--tds-success, #16a34a);
+  --_warning: var(--tds-warning, #d97706);
+  --_danger: var(--tds-danger, #dc2626);
+  --_focus-ring: var(--tds-focus-ring, var(--tdp-focus-ring, 0 0 0 3px rgba(41, 139, 236, 0.2)));
+
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  color: var(--_text);
+  font-family: var(--_font);
+}
+
+.tds > * {
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------------- input */
+
+.tds-form {
+  display: grid;
+  gap: 6px;
+}
+
+.tds-label {
+  color: var(--_text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tds-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  min-height: 46px;
+  padding: 6px 8px;
+  border: 1px solid var(--_border-strong);
+  border-radius: 12px;
+  background: var(--_surface);
+  cursor: text;
+}
+
+.tds-box:focus-within {
+  border-color: var(--_brand);
+  box-shadow: var(--_focus-ring);
+}
+
+.tds-input {
+  flex: 1 1 160px;
+  min-width: 0;
+  height: 32px;
+  padding: 0 4px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--_text);
+  font: inherit;
+  font-size: 15px;
+}
+
+.tds-chip {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  height: 32px;
+  border: 1px solid var(--_border);
+  border-radius: 8px;
+  background: var(--_surface-muted);
+  font-size: 13.5px;
+}
+
+.tds-chip-number {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 0 4px 0 10px;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tds-chip-carrier {
+  flex: 0 1 auto;
+  min-width: 56px;
+  max-width: 170px;
+  height: 22px;
+  margin: 0 2px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--tds-carrier, var(--_text-muted)) 14%, transparent);
+  color: var(--_text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tds-chip-carrier:focus-visible,
+.tds-chip-remove:focus-visible {
+  outline: 2px solid var(--_brand);
+  outline-offset: 1px;
+}
+
+.tds-chip-remove {
+  flex: none;
+  width: 26px;
+  height: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 0 8px 8px 0;
+  background: transparent;
+  color: var(--_text-muted);
+  font: inherit;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tds-chip-remove:hover {
+  color: var(--_danger);
+}
+
+.tds-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 12px;
+  margin-top: 4px;
+}
+
+.tds-warning {
+  margin-right: auto;
+  color: var(--_danger);
+  font-size: 13px;
+}
+
+.tds-submit {
+  height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--_brand);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tds-submit:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.tds-submit:focus-visible {
+  outline: none;
+  box-shadow: var(--_focus-ring);
+}
+
+/* ---------------------------------------------------------------- carrier and status */
+
+.tds-carrier {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--_text-muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.tds-carrier-mark {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  background: var(--tds-carrier, var(--_text-muted));
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.tds-status {
+  --_tone: var(--_text-muted);
+
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--_tone) 13%, transparent);
+  color: var(--_tone);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tds-status--info {
+  --_tone: var(--_brand);
+}
+
+.tds-status--success {
+  --_tone: var(--_success);
+}
+
+.tds-status--warning {
+  --_tone: var(--_warning);
+}
+
+.tds-status--danger {
+  --_tone: var(--_danger);
+}
+
+/* ---------------------------------------------------------------- result card */
+
+.tds-results {
+  display: grid;
+  gap: 12px;
+}
+
+.tds-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--_border);
+  border-radius: 14px;
+  background: var(--_surface);
+}
+
+.tds-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.tds-card-id {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-width: 0;
+}
+
+.tds-number {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.tds-card-error,
+.tds-empty,
+.tds-receiver {
+  margin: 0;
+  color: var(--_text-muted);
+  font-size: 14px;
+}
+
+.tds-receiver b {
+  color: var(--_text);
+  font-weight: 600;
+}
+
+/* progress */
+.tds-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tds-step {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  color: var(--_text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* the line to the previous step */
+.tds-step + .tds-step::before {
+  position: absolute;
+  top: 6px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--_border-strong);
+  content: "";
+}
+
+.tds-step--done::before,
+.tds-step--current::before {
+  background: var(--_brand) !important;
+}
+
+.tds-step-dot {
+  position: relative;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: 2px solid var(--_border-strong);
+  border-radius: 50%;
+  background: var(--_surface);
+}
+
+.tds-step--done .tds-step-dot {
+  border-color: var(--_brand);
+  background: var(--_brand);
+}
+
+.tds-step--current .tds-step-dot {
+  border-color: var(--_brand);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--_brand) 20%, transparent);
+}
+
+.tds-step--current {
+  color: var(--_text);
+  font-weight: 600;
+}
+
+.tds-card--success .tds-step--done::before,
+.tds-card--success .tds-step--current::before {
+  background: var(--_success) !important;
+}
+
+.tds-card--success .tds-event--latest::before {
+  background: var(--_success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--_success) 20%, transparent);
+}
+
+.tds-card--success .tds-step-dot {
+  border-color: var(--_success);
+  background: var(--_success);
+  box-shadow: none;
+}
+
+/* timeline */
+.tds-timeline {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tds-event {
+  position: relative;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 2px 14px;
+  padding: 0 0 12px 18px;
+  font-size: 14px;
+}
+
+.tds-event::before {
+  position: absolute;
+  top: 7px;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--_border-strong);
+  content: "";
+}
+
+.tds-event:not(:last-child)::after {
+  position: absolute;
+  top: 17px;
+  bottom: 0;
+  left: 3.5px;
+  width: 1px;
+  background: var(--_border);
+  content: "";
+}
+
+.tds-event--latest::before {
+  background: var(--_brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--_brand) 20%, transparent);
+}
+
+.tds-event time {
+  grid-row: span 2;
+  color: var(--_text-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tds-event--latest .tds-event-text {
+  font-weight: 600;
+}
+
+.tds-event-place {
+  color: var(--_text-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 480px) {
+  .tds-event {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tds-event time {
+    grid-row: auto;
+  }
+  .tds-step-label {
+    font-size: 11px;
+  }
+}
+
+.tds-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-top: 10px;
+  border-top: 1px solid var(--_border);
+}
+
+.tds-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--_brand);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tds-link:hover {
+  text-decoration: underline;
+}
+
+.tds-link:last-child {
+  margin-left: auto;
+}
+
+/* no provider for this carrier: a button to the carrier's own tracking page */
+.tds-handoff {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.tds-handoff-link {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--tds-carrier, var(--_brand)) 45%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--tds-carrier, var(--_brand)) 10%, var(--_surface));
+  color: var(--_text);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tds-handoff-link:hover {
+  border-color: var(--tds-carrier, var(--_brand));
+}
+
+.tds-handoff-link:focus-visible {
+  outline: none;
+  box-shadow: var(--_focus-ring);
+}

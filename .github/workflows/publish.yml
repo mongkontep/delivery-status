@@ -1,0 +1,52 @@
+name: Publish
+
+# Create a GitHub release (tag v1.2.3 matching package.json) to send that version to npm's
+# stage queue. A maintainer then approves it on npmjs.com (or `npm stage approve`) to go live.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write # OIDC token for npm trusted publishing, no npm token stored in GitHub
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      # staged publishing needs npm 11.15+; stay on 11 so a new major can't demand a newer Node
+      - run: npm install -g npm@11
+      - run: npm ci
+      - name: Release tag must match package.json version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "::error::Release tag $GITHUB_REF_NAME does not match package.json version $VERSION"
+            exit 1
+          fi
+      - run: npm test --if-present
+      - run: npm run build
+      - name: Stage on npm
+        run: |
+          # without pipefail a failed publish would hide behind tee's success
+          set -o pipefail
+          npm stage publish --access public 2>&1 | tee stage.log
+          ID="$(grep -oE 'staged with id [0-9a-f-]{36}' stage.log | awk '{print $4}')"
+          NAME="$(node -p "require('./package.json').name")"
+          VERSION="$(node -p "require('./package.json').version")"
+          {
+            echo "### ${NAME}@${VERSION} is staged and waiting for approval"
+            echo
+            echo "Approve on https://www.npmjs.com/package/${NAME} or run (npm 11.15+):"
+            echo
+            echo '```'
+            echo "npm stage approve ${ID}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
