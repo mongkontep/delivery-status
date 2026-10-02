@@ -1,6 +1,6 @@
 {
   "name": "@inverz/delivery-status",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Parcel tracking for React: paste one or many tracking numbers, detect the carrier and show a Thai delivery timeline. Server helper set up from .env: Thailand Post, Flash, J&T, Ninja Van, DHL eCommerce, Shopee, Lazada, TikTok Shop, TrackingMore, 17TRACK, Track123, AfterShip, Ship24",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -37,6 +37,7 @@
   },
   "scripts": {
     "dev": "vite --config vite.demo.config.js",
+    "playground": "vite --config vite.demo.config.js --open /deliverystatus/#tester",
     "build": "npm run env:example && vite build && cp src/style.css src/index.d.ts src/core.d.ts src/server.d.ts dist/",
     "build:demo": "vite build --config vite.demo.config.js",
     "deploy:demo": "npm run build:demo && rm -rf ../hosting/public/deliverystatus && cp -R demo-dist ../hosting/public/deliverystatus && firebase deploy --only hosting --config ../hosting/firebase.json",

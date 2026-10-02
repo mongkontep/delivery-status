@@ -21,6 +21,7 @@ export { jt, jtDigest } from "./providers/jt.js";
 export { dhlEcommerce } from "./providers/dhl-ecommerce.js";
 export { shopee, shopeeRefreshToken, lazada, lazadaRefreshToken, tiktokShop, marketplaceStatus } from "./providers/marketplaces.js";
 export { track17, track123, afterShip, ship24 } from "./providers/aggregators.js";
+export { eTrackings } from "./providers/etrackings.js";
 
 /* ---------------------------------------------------------------- tracker */
 

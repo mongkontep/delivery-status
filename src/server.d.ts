@@ -147,6 +147,7 @@ export declare function track17(options: AggregatorOptions): Provider;
 export declare function track123(options: { apiSecret: string; fetch?: typeof fetch }): Provider;
 export declare function afterShip(options: AggregatorOptions & { version?: string }): Provider;
 export declare function ship24(options: AggregatorOptions): Provider;
+export declare function eTrackings(options: { apiKey: string; keySecret: string; language?: "th" | "en"; concurrency?: number; fetch?: typeof fetch }): Provider;
 export declare function statusFromText(text: string): ShipmentStatus | null;
 export declare function thailandPost(options: ThailandPostOptions): Provider;
 export declare function trackingMore(options: TrackingMoreOptions): Provider;

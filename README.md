@@ -1,6 +1,6 @@
 # @inverz/delivery-status
 
-ช่องกรอก **เลขพัสดุ** สำหรับ React ใส่ได้หลายเลขพร้อมกัน และหลายขนส่งปนกันในครั้งเดียว เดาขนส่งจากรูปแบบเลขให้ (เลือกเองได้) แล้วแสดงสถานะเป็นภาษาไทย พร้อมแถบความคืบหน้าและไทม์ไลน์ ฝั่ง server ตั้งค่าใน `.env` อย่างเดียว รองรับ API ไปรษณีย์ไทย (ฟรี), API ของ Flash / J&T / Ninja Van / DHL eCommerce, Shopee / Lazada / TikTok Shop และ aggregator 5 เจ้า ผลลัพธ์ทุกขนส่งเป็นรูปแบบเดียวกัน ไม่มี dependency
+ช่องกรอก **เลขพัสดุ** สำหรับ React ใส่ได้หลายเลขพร้อมกัน และหลายขนส่งปนกันในครั้งเดียว เดาขนส่งจากรูปแบบเลขให้ (เลือกเองได้) แล้วแสดงสถานะเป็นภาษาไทย พร้อมแถบความคืบหน้าและไทม์ไลน์ ฝั่ง server ตั้งค่าใน `.env` อย่างเดียว รองรับ API ไปรษณีย์ไทย (ฟรี), API ของ Flash / J&T / Ninja Van / DHL eCommerce, Shopee / Lazada / TikTok Shop และ aggregator 6 เจ้า (รวม eTrackings ของไทย) ผลลัพธ์ทุกขนส่งเป็นรูปแบบเดียวกัน ไม่มี dependency
 
 **[ดูตัวอย่าง (Demo)](https://inverz-npm-package.web.app/deliverystatus/)**
 
@@ -33,16 +33,16 @@ import { DeliveryStatus } from "@inverz/delivery-status";
 | id | ขนส่ง | ดึงสถานะได้จาก | เดาจากเลข |
 |---|---|---|---|
 | `thailand-post` | ไปรษณีย์ไทย (รวม EMS และพัสดุจากต่างประเทศ) | API ไปรษณีย์ไทย (ฟรี), aggregator | ✓ ตรวจ check digit S10 |
-| `kerry` | KEX (Kerry Express) | aggregator, provider ของคุณ | ✓ `KEX…` |
+| `kerry` | KEX (Kerry Express) | eTrackings, aggregator อื่น, provider ของคุณ | ✓ `KEX…` |
 | `flash` | Flash Express | **API ของ Flash**, aggregator | ✓ `TH` + ตัวอักษรปนตัวเลข |
 | `jt` | J&T Express | **API ของ J&T**, aggregator | ✓ ตัวเลข 12 หลัก |
 | `spx` | SPX Express (Shopee) | **Shopee Open Platform**, aggregator | ✓ `TH` + ตัวเลข 12 หลัก + ตัวอักษร |
 | `lex` | LEX (Lazada) | **Lazada Open Platform**, aggregator | ✓ `LEX…` / `LX…` |
 | `ninjavan` | Ninja Van | **API ของ Ninja Van**, aggregator | ✓ `NVTH…` |
-| `best` | BEST Express | aggregator, provider ของคุณ | เลือกเอง |
+| `best` | BEST Express | eTrackings, aggregator อื่น, provider ของคุณ | เลือกเอง |
 | `scg` | SCG Express | aggregator (TrackingMore), provider ของคุณ | ✓ ตัวเลข 7–11 หลัก |
 | `dhl-ecommerce` | DHL eCommerce | **API ของ DHL eCommerce**, aggregator | เลือกเอง |
-| `nim` | นิ่มเอ็กซ์เพรส | provider ของคุณ | เลือกเอง |
+| `nim` | นิ่มเอ็กซ์เพรส | eTrackings, provider ของคุณ | เลือกเอง |
 | `dhl` | DHL Express | aggregator | ✓ ตัวเลข 10 หลัก |
 | `fedex` | FedEx | aggregator | ✓ |
 | `ups` | UPS | aggregator | ✓ `1Z…` |
@@ -141,13 +141,16 @@ app.post("/api/track", express.json(), tracker.expressHandler);
 
 **4. Aggregator** เสียเงิน ใช้ได้ทุกขนส่ง ถูกถามเป็นลำดับสุดท้าย
 
-| provider | ตัวแปร |
-|---|---|
-| TrackingMore | `TRACKINGMORE_API_KEY` |
-| 17TRACK | `TRACK17_API_KEY` |
-| Track123 | `TRACK123_API_SECRET` |
-| AfterShip | `AFTERSHIP_API_KEY` |
-| Ship24 | `SHIP24_API_KEY` |
+| provider | ตัวแปร | หมายเหตุ |
+|---|---|---|
+| eTrackings | `ETRACKINGS_API_KEY`, `ETRACKINGS_KEY_SECRET`, (ไม่บังคับ) `ETRACKINGS_LANGUAGE` | บริการของไทย ฟรี 50 ครั้ง แพ็กเกจเริ่ม 699 บาท/เดือน รองรับ Kerry, Flash, J&T, SPX, BEST, นิ่มเอ็กซ์เพรส, DHL eCommerce (ไม่รองรับไปรษณีย์ไทย, Lazada, FedEx, UPS, DHL Express) |
+| TrackingMore | `TRACKINGMORE_API_KEY` | |
+| 17TRACK | `TRACK17_API_KEY` | |
+| Track123 | `TRACK123_API_SECRET` | |
+| AfterShip | `AFTERSHIP_API_KEY` | |
+| Ship24 | `SHIP24_API_KEY` | |
+
+ถ้าเปิดหลายเจ้า จะถาม eTrackings ก่อน แล้วค่อยถามเจ้าต่างประเทศเฉพาะเลขที่ eTrackings ไม่มี
 
 ### ลำดับที่ถาม
 
@@ -195,11 +198,11 @@ const tracker = createTrackerFromEnv(process.env, {
 
 ### ไม่ใช้ `.env`
 
-ประกอบ provider เองได้ทุกตัว: `createTracker({ providers: [flash({ mchId, key }), thailandPost({ token })] })` มี `flash`, `ninjaVan`, `jt`, `dhlEcommerce`, `shopee`, `lazada`, `tiktokShop`, `thailandPost`, `trackingMore`, `track17`, `track123`, `afterShip`, `ship24`
+ประกอบ provider เองได้ทุกตัว: `createTracker({ providers: [flash({ mchId, key }), thailandPost({ token })] })` มี `flash`, `ninjaVan`, `jt`, `dhlEcommerce`, `shopee`, `lazada`, `tiktokShop`, `thailandPost`, `eTrackings`, `trackingMore`, `track17`, `track123`, `afterShip`, `ship24`
 
 ### เขียน provider เอง
 
-ขนส่งที่ไม่มีในรายการ (Kerry, SCG, BEST, นิ่มเอ็กซ์เพรส ยังไม่มีเอกสาร API สาธารณะ) หรือระบบภายในของคุณ เขียนเป็น object แล้วใส่ใน `providers` จะถูกถามก่อนตัวจาก `.env`
+ขนส่งที่ยังไม่มี API ของตัวเอง (Kerry, SCG, BEST, นิ่มเอ็กซ์เพรส ไม่มีเอกสาร API สาธารณะ ใช้ผ่าน eTrackings ได้) ถ้าคุณได้ API มาจากขนส่งโดยตรง หรือมีระบบภายในของคุณเอง เขียนเป็น object แล้วใส่ใน `providers` จะถูกถามก่อนตัวจาก `.env`
 
 ```js
 import { createTrackerFromEnv, statusFromText } from "@inverz/delivery-status/server";

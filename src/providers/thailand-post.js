@@ -49,6 +49,10 @@ export const thailandPost = ({ token, language = "TH", fetch: fetchFn = globalTh
       method: "POST",
       headers: { Authorization: `Token ${token}`, "Content-Type": "application/json" },
     });
+    // a wrong or revoked token is answered with 401/403 and no JSON
+    if (res.status === 401 || res.status === 403) {
+      throw new TrackingError("provider_error", `Thailand Post rejected the token (HTTP ${res.status}). Check THAILAND_POST_TOKEN.`);
+    }
     const data = await readJson(res);
     if (!res.ok || !data.token) throw new TrackingError("provider_error", "Thailand Post did not issue a token", data);
     const expires = Date.parse(String(data.expire ?? "").replace(" ", "T"));

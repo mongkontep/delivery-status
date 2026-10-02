@@ -142,6 +142,8 @@ main.wrap {
 
 .example {
   margin-bottom: 20px;
+  /* keep the heading clear of the sticky top bar when jumping to #anchors */
+  scroll-margin-top: 64px;
   padding: 24px;
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -801,4 +803,133 @@ main.wrap {
 
 .carriers code {
   font-size: 12.5px;
+}
+
+/* ---- back to the package list ---- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 48px;
+}
+
+.topbar-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.topbar-home:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.topbar-pkg {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- delivery-status tester ---- */
+.tester-tabs {
+  margin-top: 16px;
+}
+
+.tester-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.tester-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px;
+  gap: 12px;
+  width: 100%;
+}
+
+@media (max-width: 560px) {
+  .tester-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tester-token {
+  display: flex;
+  gap: 6px;
+}
+
+.tester-token .try {
+  height: auto;
+}
+
+.tester-empty {
+  width: 100%;
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.tester-raw {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+
+.tester-raw summary {
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.tester-raw--bad b {
+  color: #dc2626;
+}
+
+.tester-detail {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.tester-steps {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+}
+
+.tester-steps code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
 }

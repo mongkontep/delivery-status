@@ -4,6 +4,7 @@ import "../src/style.css";
 import "./demo.css";
 import { DeliveryStatus, ShipmentCard, CarrierBadge, CARRIERS, detectCarrier, parseNumbers } from "../src/index.js";
 import { mockTrack } from "./mock.js";
+import { Tester } from "./tester.jsx";
 
 const NPM = "https://www.npmjs.com/package/@inverz/delivery-status";
 const HOME = "https://inverz-npm-package.web.app/";
@@ -234,6 +235,9 @@ const jt: Carrier[] = detectCarrier("820112345678");  // [jt, fedex]`,
 
 const OWN_API = {
   "thailand-post": "API ไปรษณีย์ไทย (ฟรี)",
+  kerry: "eTrackings, aggregator",
+  best: "eTrackings, aggregator",
+  nim: "eTrackings",
   flash: "API ของ Flash, aggregator",
   jt: "API ของ J&T, aggregator",
   ninjavan: "API ของ Ninja Van, aggregator",
@@ -374,6 +378,8 @@ TIKTOK_SHOP_APP_SECRET=...
 THAILAND_POST_TOKEN=...
 
 # Aggregator (เสียเงิน ถามเป็นลำดับสุดท้าย)
+ETRACKINGS_API_KEY=...       # ของไทย: Kerry, Flash, J&T, SPX, BEST, นิ่ม
+ETRACKINGS_KEY_SECRET=...
 TRACKINGMORE_API_KEY=...
 TRACK17_API_KEY=...
 TRACK123_API_SECRET=...
@@ -526,6 +532,14 @@ const HeroDemo = () => (
 
 const App = () => (
   <>
+    <nav className="topbar" aria-label="เมนู">
+      <div className="wrap topbar-inner">
+        <a className="topbar-home" href={HOME}>
+          <span aria-hidden="true">←</span> หน้าแรก
+        </a>
+        <span className="topbar-pkg">@inverz/delivery-status</span>
+      </div>
+    </nav>
     <header className="hero">
       <div className="wrap hero-grid ds-hero-grid">
         <div>
@@ -549,7 +563,7 @@ const App = () => (
 
     <main className="wrap">
       <p className="callout">
-        สถานะพัสดุในหน้านี้เป็น<b>ข้อมูลจำลอง</b> เพราะหน้าตัวอย่างไม่มี server และ API key ของขนส่ง ใช้งานจริงให้ต่อ endpoint ตามหัวข้อ “ฝั่ง server”
+        ตัวอย่างในหน้านี้ใช้<b>ข้อมูลจำลอง</b> ยกเว้นหัวข้อ <a href="#tester">ลองกับ API จริง</a> ที่ใส่ token ของไปรษณีย์ไทยแล้วดูสถานะจริงได้
         ปุ่ม “ดูที่เว็บขนส่ง” เปิดหน้าจริงของขนส่ง
       </p>
       <Example
@@ -564,6 +578,7 @@ import { DeliveryStatus } from "@inverz/delivery-status";
 import type { Shipment, DeliveryStatusProps } from "@inverz/delivery-status";`,
         )}
       />
+      <Tester />
       <BasicExample />
       <DetectExample />
       <CarriersTable />

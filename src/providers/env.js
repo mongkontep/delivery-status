@@ -3,6 +3,7 @@
 // the paid aggregators (asked only when nothing before them had the parcel).
 import { afterShip, ship24, track123, track17 } from "./aggregators.js";
 import { dhlEcommerce } from "./dhl-ecommerce.js";
+import { eTrackings } from "./etrackings.js";
 import { flash } from "./flash.js";
 import { jt } from "./jt.js";
 import { lazada, shopee, tiktokShop } from "./marketplaces.js";
@@ -125,6 +126,18 @@ export const ENV_PROVIDERS = [
       { key: "THAILAND_POST_LANGUAGE", note: "TH (default), EN or CN" },
     ],
     create: (e, fetch) => thailandPost({ token: e.THAILAND_POST_TOKEN, language: e.THAILAND_POST_LANGUAGE || undefined, fetch }),
+  },
+  {
+    name: "eTrackings",
+    kind: "aggregator",
+    title: "eTrackings (Thai: Kerry, Flash, J&T, SPX, BEST, Nim, DHL eCommerce)",
+    env: [
+      { key: "ETRACKINGS_API_KEY", required: true, note: "API Key from https://apps.etrackings.com → Settings → API Keys" },
+      { key: "ETRACKINGS_KEY_SECRET", required: true, note: "Key Secret shown with it" },
+      { key: "ETRACKINGS_LANGUAGE", note: "th (default) or en" },
+    ],
+    create: (e, fetch) =>
+      eTrackings({ apiKey: e.ETRACKINGS_API_KEY, keySecret: e.ETRACKINGS_KEY_SECRET, language: e.ETRACKINGS_LANGUAGE || undefined, fetch }),
   },
   {
     name: "trackingMore",

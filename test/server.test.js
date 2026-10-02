@@ -236,3 +236,10 @@ test("`carriers` on an item limits the carriers tried", async () => {
   await tracker.track({ items: [{ number: "820112345678", carriers: ["fedex", "nope"] }] });
   assert.deepEqual(asked, ["fedex"]);
 });
+
+test("thailandPost: a rejected token says so", async () => {
+  const fetch = async () => new Response("Unauthorized", { status: 401 });
+  const [s] = await createTracker({ thailandPost: { token: "bad", fetch } }).track(["EF582568151TH"]);
+  assert.equal(s.error, "provider_error");
+  assert.match(s.detail, /rejected the token \(HTTP 401\)/);
+});

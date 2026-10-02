@@ -25,6 +25,11 @@ export type Carrier = {
   url: string | null;
   /** TrackingMore courier code */
   trackingMore: string | null;
+  /** codes on the other aggregators (null: not listed there) */
+  track17: number | null;
+  track123: string | null;
+  afterShip: string | null;
+  eTrackings: string | null;
   patterns: [RegExp | ((number: string) => boolean), number][];
 };
 

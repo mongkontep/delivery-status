@@ -15,6 +15,7 @@ import {
   marketplaceStatus,
   ninjaVan,
   ship24,
+  eTrackings,
   shopee,
   tiktokShop,
   track123,
@@ -381,6 +382,59 @@ test("track123, afterShip and ship24", async () => {
   assert.equal(fetch.calls.find((c) => c.url.includes("ship24")).headers.Authorization, "Bearer z");
 });
 
+test("eTrackings: courier keys, grouped timelines, description split", async () => {
+  const fetch = fakeFetch([
+    [
+      "api.etrackings.com/api/v3/tracks/find",
+      ({ body }) =>
+        JSON.parse(body).trackingNo === "KEX00000000000"
+          ? json({ meta: { code: 404, message: "Not found" } }, 404)
+          : json({
+              meta: { code: 200, message: "OK" },
+              data: {
+                trackingNo: "KEX20898721369",
+                courierKey: "kex-express",
+                status: "ON_DELIVERED",
+                currentStatus: "เคอรี่จัดส่งพัสดุของคุณเรียบร้อยแล้ว",
+                detail: { signer: "สมชาย" },
+                timelines: [
+                  {
+                    date: "2026-10-02",
+                    details: [
+                      { dateTime: "2026-10-02T13:59:56+07:00", status: "ON_DELIVERED", description: "13:59 เคอรี่จัดส่งพัสดุของคุณเรียบร้อยแล้ว - คานหาม, พระนครศรีอยุธยา" },
+                    ],
+                  },
+                  {
+                    date: "2026-10-01",
+                    details: [{ dateTime: "2026-10-01T09:10:00+07:00", status: "ON_PICKED_UP", description: "09:10 รับพัสดุเข้าระบบ" }],
+                  },
+                ],
+              },
+            }),
+    ],
+  ]);
+  const p = eTrackings({ apiKey: "k", keySecret: "s", fetch });
+  const [s, missing, nope] = await p.track([
+    { number: "KEX20898721369", carrier: "kerry" },
+    { number: "KEX00000000000", carrier: "kerry" },
+    { number: "EF582568151TH", carrier: "thailand-post" },
+  ]);
+  const call = fetch.calls[0];
+  assert.equal(call.headers["Etrackings-Api-Key"], "k");
+  assert.equal(call.headers["Etrackings-Key-Secret"], "s");
+  assert.deepEqual(JSON.parse(call.body), { courier: "kex-express", trackingNo: "KEX20898721369" });
+  assert.equal(s.status, "delivered");
+  assert.equal(s.receiver, "สมชาย");
+  assert.equal(s.events[0].text, "เคอรี่จัดส่งพัสดุของคุณเรียบร้อยแล้ว");
+  assert.equal(s.events[0].location, "คานหาม, พระนครศรีอยุธยา");
+  assert.equal(s.events[0].time, "2026-10-02T06:59:56.000Z");
+  assert.equal(s.events[1].status, "accepted");
+  assert.equal(missing.error, "not_found");
+  assert.equal(nope.error, "unsupported"); // Thailand Post is not on eTrackings
+  assert.equal(fetch.calls.length, 2);
+  assert.ok(!p.carriers.includes("thailand-post"));
+});
+
 /* ---------------------------------------------------------------- routing across providers */
 
 test("a provider with no record passes the number on to the next one", async () => {
@@ -431,6 +485,8 @@ test("env: all providers, hooks for marketplaces", () => {
     AFTERSHIP_API_KEY: "a",
     SHIP24_API_KEY: "z",
     TRACKINGMORE_API_KEY: "m",
+    ETRACKINGS_API_KEY: "e",
+    ETRACKINGS_KEY_SECRET: "s",
   };
   assert.deepEqual(createTrackerFromEnv(env).providers, [
     "flash",
@@ -438,6 +494,7 @@ test("env: all providers, hooks for marketplaces", () => {
     "jt",
     "dhlEcommerce",
     "thailandPost",
+    "eTrackings",
     "trackingMore",
     "track17",
     "track123",

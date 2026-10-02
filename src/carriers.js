@@ -8,6 +8,7 @@
 //   trackingMore courier code on TrackingMore (api.trackingmore.com/v4)
 //   track17 / track123 / afterShip  the same on 17TRACK (numeric), Track123 and AfterShip; null when
 //                the service lists no code for it (the number then goes without one, to auto-detect)
+//   eTrackings   courier key on eTrackings (api.etrackings.com/api/v3); null where it is not supported
 //   patterns     [regex, score]; higher score wins when several carriers match
 
 /** S10 (UPU) check digit: weights 8 6 4 2 3 5 9 7, then 11 − sum mod 11 (10 → 0, 11 → 5). */
@@ -36,6 +37,7 @@ export const CARRIERS = [
     track17: 20041,
     track123: "thailand-post",
     afterShip: "thailand-post",
+    eTrackings: null,
     // check digit makes this one reliable; parcels from abroad keep their origin's country letters
     patterns: [[(n) => isS10(n) && n.endsWith("TH"), 100], [isS10, 80]],
   },
@@ -50,6 +52,7 @@ export const CARRIERS = [
     track17: 101405,
     track123: "kerryexpressth",
     afterShip: null,
+    eTrackings: "kex-express",
     patterns: [[/^KEX[0-9A-Z]{8,14}$/, 90], [/^(KX\d{11}|TBK[0-9A-Z]{6,})$/, 60]],
   },
   {
@@ -63,6 +66,7 @@ export const CARRIERS = [
     track17: 100235,
     track123: "flashexpress",
     afterShip: "flashexpress",
+    eTrackings: "flash-express",
     // TH + 11–12 letters and digits, with at least one letter after "TH" (SPX is all digits there)
     patterns: [[/^TH(?=[0-9A-Z]*[A-Z])[0-9A-Z]{11,12}$/, 70]],
   },
@@ -77,6 +81,7 @@ export const CARRIERS = [
     track17: 100271,
     track123: "jtexpressth",
     afterShip: "jt-express-th",
+    eTrackings: "jt-express",
     patterns: [[/^8\d{11}$/, 60], [/^\d{12}$/, 40]],
   },
   {
@@ -90,6 +95,7 @@ export const CARRIERS = [
     track17: 100410,
     track123: "shopee-xpress-th",
     afterShip: "spx-th",
+    eTrackings: "shopee-express",
     patterns: [[/^TH\d{12}[A-Z]$/, 75], [/^SPXTH\d{10,14}$/, 85]],
   },
   {
@@ -103,6 +109,7 @@ export const CARRIERS = [
     track17: 101326,
     track123: null,
     afterShip: "lex-th",
+    eTrackings: null,
     patterns: [[/^(LEX|LX)[0-9A-Z]{8,}$/, 70]],
   },
   {
@@ -116,6 +123,7 @@ export const CARRIERS = [
     track17: 100128,
     track123: "ninjavan-th",
     afterShip: "ninjavan-thai",
+    eTrackings: "ninja-van",
     patterns: [[/^NVTH[0-9A-Z]{6,}$/, 95]],
   },
   {
@@ -129,6 +137,7 @@ export const CARRIERS = [
     track17: 101196,
     track123: null,
     afterShip: null,
+    eTrackings: "best-express",
     patterns: [],
   },
   {
@@ -142,6 +151,7 @@ export const CARRIERS = [
     track17: null,
     track123: null,
     afterShip: null,
+    eTrackings: "scg-express",
     patterns: [[/^\d{7,11}$/, 20]],
   },
   {
@@ -155,6 +165,7 @@ export const CARRIERS = [
     track17: 7048,
     track123: "dhl-ecommerce-asia",
     afterShip: "dhl-global-mail-asia",
+    eTrackings: "dhl-ecommerce",
     patterns: [],
   },
   {
@@ -168,6 +179,7 @@ export const CARRIERS = [
     track17: null,
     track123: null,
     afterShip: null,
+    eTrackings: "nim-express",
     patterns: [],
   },
   {
@@ -181,6 +193,7 @@ export const CARRIERS = [
     track17: 100001,
     track123: "dhl",
     afterShip: "dhl",
+    eTrackings: null,
     patterns: [[/^\d{10}$/, 45]],
   },
   {
@@ -194,6 +207,7 @@ export const CARRIERS = [
     track17: 100003,
     track123: "fedex",
     afterShip: "fedex",
+    eTrackings: null,
     patterns: [[/^(\d{15}|\d{20}|\d{22})$/, 50], [/^\d{12}$/, 30]],
   },
   {
@@ -207,6 +221,7 @@ export const CARRIERS = [
     track17: 100002,
     track123: "ups",
     afterShip: "ups",
+    eTrackings: null,
     patterns: [[/^1Z[0-9A-Z]{16}$/, 100]],
   },
 ];
