@@ -69,6 +69,13 @@
   "license": "MIT",
   "author": "Inverz Solutions Co.,Ltd.",
   "homepage": "https://inverz-npm-package.web.app/deliverystatus/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mongkontep/delivery-status.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mongkontep/delivery-status/issues"
+  },
   "peerDependencies": {
     "react": ">=16.9"
   },
