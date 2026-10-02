@@ -852,10 +852,6 @@ main.wrap {
 }
 
 /* ---- delivery-status tester ---- */
-.tester-tabs {
-  margin-top: 16px;
-}
-
 .tester-body {
   display: flex;
   flex-direction: column;
@@ -932,4 +928,56 @@ main.wrap {
   background: var(--bg);
   font-size: 12.5px;
   overflow-wrap: anywhere;
+}
+
+.tester-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.tester-key {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+}
+
+.tester-optional {
+  font-weight: 400;
+}
+
+.tester-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.tester-route {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13.5px;
+}
+
+.tester-route--browser {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.tester-route--local {
+  background: #eef6fe;
+  color: #1e4f8a;
+}
+
+.tester-route--blocked {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.tester-blocked {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
 }

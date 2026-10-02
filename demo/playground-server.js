@@ -2,11 +2,12 @@
 // .env.local (or .env) in the package folder. Keys stay on your machine; nothing here is deployed.
 // The .env file is read again on every request, so edits apply without a restart.
 //
-// Marketplaces (Shopee, Lazada, TikTok Shop) need an order id and an access token: the page sends
-// "tracking number → order id" pairs in a header, and the token comes from SHOPEE_ACCESS_TOKEN,
-// LAZADA_ACCESS_TOKEN or TIKTOK_SHOP_ACCESS_TOKEN in the same .env file.
+// The tester on the page sends { items, provider, env, orders, accessToken }: the keys typed on the
+// page (env), or env: null to use .env.local. Only the chosen provider is tried, so each one can be
+// checked on its own. Marketplaces get the order ids from `orders` and the token from `accessToken`
+// (or SHOPEE_ACCESS_TOKEN, LAZADA_ACCESS_TOKEN, TIKTOK_SHOP_ACCESS_TOKEN in .env.local).
 import { loadEnv } from "vite";
-import { ENV_PROVIDERS, checkEnv, createTrackerFromEnv } from "../src/server.js";
+import { ENV_PROVIDERS, checkEnv, createTracker, createTrackerFromEnv } from "../src/server.js";
 
 const MARKETPLACE_TOKENS = { shopee: "SHOPEE_ACCESS_TOKEN", lazada: "LAZADA_ACCESS_TOKEN", tiktokShop: "TIKTOK_SHOP_ACCESS_TOKEN" };
 
@@ -31,15 +32,16 @@ export const playground = () => ({
     const root = process.cwd();
     const env = () => loadEnv("development", root, "");
 
-    const hooksFor = (e, orders) =>
+    const hooksFor = (e, orders, typedToken) =>
       Object.fromEntries(
         Object.entries(MARKETPLACE_TOKENS).map(([name, key]) => [
           name,
           {
-            findOrder: (number) => (orders[number] ? { orderId: orders[number] } : null),
+            findOrder: (number) => (orders?.[number] ? { orderId: orders[number] } : null),
             getAccessToken: () => {
-              if (!e[key]) throw new Error(`Set ${key} in .env.local to test ${name}`);
-              return e[key];
+              const token = typedToken || e[key];
+              if (!token) throw new Error(`Type the shop's access token, or set ${key} in .env.local`);
+              return token;
             },
           },
         ]),
@@ -60,13 +62,20 @@ export const playground = () => ({
           });
         }
         if (path.endsWith("/api/track") && req.method === "POST") {
-          const e = env();
-          let orders = {};
-          try {
-            orders = JSON.parse(req.headers["x-playground-orders"] || "{}");
-          } catch {}
-          const tracker = createTrackerFromEnv(e, { hooks: hooksFor(e, orders), cacheSeconds: 0 });
+          const fileEnv = env();
           const body = JSON.parse((await readBody(req)) || "{}");
+          const hooks = hooksFor(fileEnv, body.orders, body.accessToken);
+          let tracker;
+          const chosen = ENV_PROVIDERS.find((p) => p.name === body.provider);
+          if (chosen) {
+            // just the provider picked on the page, from the typed keys or else from .env.local
+            const e = body.env ?? fileEnv;
+            const missing = chosen.env.filter((v) => v.required && !e[v.key]).map((v) => v.key);
+            if (missing.length) throw Object.assign(new Error(`Missing ${missing.join(", ")}`), { code: "config" });
+            tracker = createTracker({ providers: [{ ...chosen.create(e, undefined, hooks[chosen.name] ?? {}), name: chosen.name }], cacheSeconds: 0 });
+          } else {
+            tracker = createTrackerFromEnv(fileEnv, { hooks, cacheSeconds: 0 });
+          }
           return send(res, 200, { shipments: await tracker.track(body), providers: tracker.providers });
         }
       } catch (err) {

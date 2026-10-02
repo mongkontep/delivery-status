@@ -1,21 +1,30 @@
-// "ลองกับ API จริง": check real keys and real tracking numbers before wiring up a server.
-//   Thailand Post  called straight from this browser tab (its API allows it); the token stays in memory
-//   Local server   `npm run playground` serves /api/track from .env.local, so every provider can be tried
+// "ลองกับ API จริง": type a provider's keys, enter real tracking numbers and see what comes back.
+//   In the browser  for APIs that allow calls from web pages (CORS): the keys go straight to that API
+//   Local server    for the rest, through `npm run playground` (/api/track on this machine); the keys
+//                   typed here go only to localhost, or leave them empty to use .env.local
+// Keys are kept in memory only: nothing is saved, and closing the tab forgets them.
 import React, { useEffect, useMemo, useState } from "react";
 import { DeliveryStatus } from "../src/index.js";
 import { createTracker } from "../src/server.js";
+import { ENV_PROVIDERS } from "../src/providers/env.js";
 
 const BASE = import.meta.env.BASE_URL;
-const TOKEN_PAGE = "https://track.thailandpost.co.th/developerGuide";
+
+/** APIs whose CORS headers let a web page call them (checked with a preflight, October 2026). */
+const BROWSER_OK = new Set(["thailandPost", "lazada", "trackingMore", "track123", "ship24"]);
+
+const MARKETPLACES = new Set(["shopee", "lazada", "tiktokShop"]);
+
+const KIND_LABEL = { carrier: "API ของขนส่ง", marketplace: "Marketplace", post: "ไปรษณีย์", aggregator: "Aggregator" };
 
 const ERROR_HINTS = {
-  not_found: "ไม่พบเลขนี้ในระบบของขนส่ง (เลขผิด ยังไม่เข้าระบบ หรือไม่ใช่พัสดุของบัญชีนี้)",
-  unsupported: "ยังไม่ได้ตั้งค่า provider ที่ตอบขนส่งนี้ได้",
+  not_found: "ไม่พบเลขนี้ (เลขผิด ยังไม่เข้าระบบ หรือไม่ใช่พัสดุของบัญชีนี้)",
+  unsupported: "provider นี้ไม่รองรับขนส่งของเลขนี้ ลองเลือกขนส่งที่ป้าย",
   invalid: "รูปแบบเลขไม่ถูกต้อง",
   provider_error: "เรียก API ไม่สำเร็จ ดูรายละเอียดด้านล่าง",
 };
 
-/** What came back, per number: the parts that tell whether the keys work. */
+/** What came back, per number: enough to tell whether the keys work. */
 const Raw = ({ result }) => {
   if (!result) return null;
   if (result.error) {
@@ -37,6 +46,9 @@ const Raw = ({ result }) => {
                 <span className="hint bad">
                   {s.error}: {ERROR_HINTS[s.error]}
                   {/rejected the token/.test(s.detail ?? "") && <span className="tester-detail">token ไม่ถูกต้องหรือถูกยกเลิก ตรวจว่าคัดลอกมาครบ</span>}
+                  {/Failed to fetch|NetworkError|Load failed/i.test(s.detail ?? "") && (
+                    <span className="tester-detail">เบราว์เซอร์ส่งไม่ถึง API (ถูกบล็อกหรือเน็ตมีปัญหา) ลองผ่าน server ในเครื่อง</span>
+                  )}
                   {s.detail && <code className="tester-detail">{s.detail}</code>}
                 </span>
               ) : (
@@ -56,18 +68,98 @@ const Raw = ({ result }) => {
   );
 };
 
-/** Thailand Post, straight from the browser. */
-const ThailandPostTester = () => {
-  const [token, setToken] = useState("");
+const LocalSteps = ({ onRetry }) => (
+  <div className="tester-blocked">
+    <p className="note">
+      API นี้ไม่ยอมให้หน้าเว็บเรียกตรง (CORS) จึงต้องทดสอบผ่าน server เปิดในเครื่องตัวเองได้ใน 3 คำสั่ง แล้วกลับมาพิมพ์ key ในหน้านี้ได้เลย key จะส่งไปแค่ server
+      ในเครื่องคุณ
+    </p>
+    <ol className="tester-steps">
+      <li>
+        <code>git clone https://github.com/mongkontep/delivery-status</code>
+      </li>
+      <li>
+        <code>cd delivery-status && npm install</code>
+      </li>
+      <li>
+        <code>npm run playground</code> หน้านี้จะเปิดขึ้นในเครื่อง (localhost) แล้วฟอร์มนี้ใช้ได้ทุก provider
+      </li>
+    </ol>
+    <button type="button" className="try" onClick={onRetry}>
+      เปิด server แล้ว ลองหาอีกครั้ง
+    </button>
+  </div>
+);
+
+export const Tester = () => {
+  const [name, setName] = useState("thailandPost");
+  const [values, setValues] = useState({}); // per provider name: { ENV_KEY: value }
   const [show, setShow] = useState(false);
-  const [language, setLanguage] = useState("TH");
+  const [orders, setOrders] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+  const [local, setLocal] = useState(null); // the playground server's answer, or null
   const [result, setResult] = useState(null);
-  // a new tracker whenever the token changes, so a wrong token is not cached
-  const tracker = useMemo(() => (token.trim() ? createTracker({ thailandPost: { token: token.trim(), language }, cacheSeconds: 0 }) : null), [token, language]);
+
+  const provider = ENV_PROVIDERS.find((p) => p.name === name);
+  const typed = values[name] ?? {};
+  const required = provider.env.filter((v) => v.required);
+  const filled = required.every((v) => typed[v.key]?.trim());
+  const isMarketplace = MARKETPLACES.has(name);
+
+  const checkLocal = () =>
+    fetch(`${BASE}api/playground`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setLocal(d?.ok ? d : null))
+      .catch(() => setLocal(null));
+  useEffect(() => {
+    checkLocal();
+  }, []);
+
+  // browser where the API allows it, else the local server when it runs
+  const route = BROWSER_OK.has(name) ? "browser" : local ? "local" : "blocked";
+  const fromEnvFile = route === "local" && !filled && local.enabled.some((p) => p.name === name);
+
+  // "TH123 2410ABC" per line → { TH123: "2410ABC" }, for the marketplaces
+  const orderMap = useMemo(
+    () =>
+      Object.fromEntries(
+        orders
+          .split("\n")
+          .map((l) => l.trim().split(/[\s,=:]+/))
+          .filter((p) => p.length >= 2 && p[0] && p[1])
+          .map(([n, o]) => [n.toUpperCase(), o]),
+      ),
+    [orders],
+  );
+
+  const env = Object.fromEntries(Object.entries(typed).filter(([, v]) => v?.trim()).map(([k, v]) => [k, v.trim()]));
+  const hooks = { findOrder: (n) => (orderMap[n] ? { orderId: orderMap[n] } : null), getAccessToken: () => accessToken.trim() };
+
+  // a fresh tracker for every set of keys, so a wrong key is not cached
+  const browserTracker = useMemo(() => {
+    if (route !== "browser" || !filled) return null;
+    try {
+      return createTracker({ providers: [{ ...provider.create(env, undefined, hooks), name }], cacheSeconds: 0 });
+    } catch (e) {
+      return { error: e.message };
+    }
+  }, [route, filled, name, JSON.stringify(env), JSON.stringify(orderMap), accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const track = async (items) => {
     try {
-      const shipments = await tracker.track(items);
+      let shipments;
+      if (route === "browser") {
+        shipments = await browserTracker.track(items);
+      } else {
+        const res = await fetch(`${BASE}api/track`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items, provider: name, env: fromEnvFile ? null : env, orders: orderMap, accessToken: accessToken.trim() || null }),
+        });
+        const data = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+        if (!res.ok) throw new Error(data.message ?? data.error);
+        shipments = data.shipments;
+      }
       setResult({ shipments });
       return shipments;
     } catch (e) {
@@ -76,172 +168,120 @@ const ThailandPostTester = () => {
     }
   };
 
-  return (
-    <div className="tester-body">
-      <div className="tester-fields">
-        <label className="field">
-          Thailand Post API token
-          <span className="tester-token">
-            <input
-              className="text-input"
-              type={show ? "text" : "password"}
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="วาง token จากหน้า dashboard ของไปรษณีย์ไทย"
-              value={token}
-              onChange={(e) => {
-                setToken(e.target.value);
-                setResult(null);
-              }}
-            />
-            <button type="button" className="try" onClick={() => setShow(!show)}>
-              {show ? "ซ่อน" : "แสดง"}
-            </button>
-          </span>
-        </label>
-        <label className="field">
-          ภาษา
-          <select className="text-input" value={language} onChange={(e) => setLanguage(e.target.value)}>
-            <option value="TH">ไทย</option>
-            <option value="EN">English</option>
-          </select>
-        </label>
-      </div>
-      <p className="note hint-note">
-        token อยู่ในแท็บนี้เท่านั้น ส่งตรงไปที่ trackapi.thailandpost.co.th ไม่ผ่าน server ของเรา และไม่ถูกบันทึก ปิดแท็บแล้วหายไป ยังไม่มี token?{" "}
-        <a href={TOKEN_PAGE} target="_blank" rel="noreferrer">
-          สมัครฟรีที่ไปรษณีย์ไทย
-        </a>
-      </p>
-      {tracker ? (
-        <DeliveryStatus key={token + language} className="fill" track={track} />
-      ) : (
-        <p className="tester-empty">ใส่ token ก่อน แล้วช่องกรอกเลขพัสดุจะขึ้นตรงนี้</p>
-      )}
-      <Raw result={result} />
-    </div>
-  );
-};
-
-/** Every provider, through `npm run playground` on this machine. */
-const LocalTester = () => {
-  const [info, setInfo] = useState(undefined); // undefined: checking, null: not running
-  const [orders, setOrders] = useState("");
-  const [result, setResult] = useState(null);
-
-  const check = () =>
-    fetch(`${BASE}api/playground`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setInfo(d?.ok ? d : null))
-      .catch(() => setInfo(null));
-  useEffect(() => {
-    check();
-  }, []);
-
-  // "TH123 2410ABC" per line → { TH123: "2410ABC" } for the marketplace providers
-  const orderMap = Object.fromEntries(
-    orders
-      .split("\n")
-      .map((l) => l.trim().split(/[\s,=:]+/))
-      .filter((p) => p.length >= 2 && p[0] && p[1])
-      .map(([n, o]) => [n.toUpperCase(), o]),
-  );
-
-  const track = async (items) => {
-    const res = await fetch(`${BASE}api/track`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-playground-orders": JSON.stringify(orderMap) },
-      body: JSON.stringify({ items }),
-    });
-    const data = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
-    if (!res.ok) {
-      setResult({ error: data.message ?? data.error });
-      throw new Error(data.message);
-    }
-    setResult({ shipments: data.shipments });
-    check(); // .env.local may have changed
-    return data.shipments;
+  const set = (key, value) => {
+    setValues({ ...values, [name]: { ...typed, [key]: value } });
+    setResult(null);
   };
 
-  if (info === undefined) return <p className="note">กำลังหา server ในเครื่อง…</p>;
+  const ready = route === "browser" ? browserTracker && !browserTracker.error : route === "local" && (filled || fromEnvFile);
 
-  if (info === null) {
-    return (
-      <div className="tester-body">
-        <p className="note">
-          ทดสอบ provider อื่น (Flash, J&T, Ninja Van, DHL eCommerce, Shopee, Lazada, TikTok Shop, aggregator) ได้จากเครื่องตัวเอง key อยู่ในไฟล์ .env.local
-          ในเครื่อง ไม่ต้องกรอกลงหน้าเว็บ
-        </p>
-        <ol className="tester-steps">
-          <li>
-            <code>git clone https://github.com/mongkontep/delivery-status && cd delivery-status && npm install</code>
-          </li>
-          <li>
-            <code>cp .env.example .env.local</code> แล้วใส่ key ของ provider ที่จะลอง
-          </li>
-          <li>
-            <code>npm run playground</code> หน้านี้จะเปิดขึ้นในเครื่อง แล้วแท็บนี้จะใช้ได้
-          </li>
-        </ol>
-        <button type="button" className="try" onClick={check}>
-          ลองหาอีกครั้ง
-        </button>
-      </div>
-    );
-  }
-
-  const marketplaces = info.enabled.filter((p) => ["shopee", "lazada", "tiktokShop"].includes(p.name));
-  return (
-    <div className="tester-body">
-      <dl className="formats compact">
-        <div>
-          <dt>provider ที่เปิดอยู่</dt>
-          <dd>{info.enabled.length ? info.enabled.map((p) => p.title).join(" → ") : "ยังไม่มี (ใส่ key ใน .env.local)"}</dd>
-        </div>
-        {info.incomplete.map((p) => (
-          <div key={p.name}>
-            <dt>{p.title}</dt>
-            <dd className="hint bad">ใส่ไม่ครบ ขาด {p.missing.join(", ")}</dd>
-          </div>
-        ))}
-        {marketplaces.map((p) => (
-          <div key={p.name}>
-            <dt>{p.title}</dt>
-            <dd className={info.marketplaceTokens[p.name] ? "hint ok" : "hint bad"}>
-              {info.marketplaceTokens[p.name] ? "มี access token แล้ว" : `ใส่ access token ใน .env.local (${p.name === "tiktokShop" ? "TIKTOK_SHOP" : p.name.toUpperCase()}_ACCESS_TOKEN)`}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      {marketplaces.length > 0 && (
-        <label className="field fill">
-          เลขพัสดุ → เลขคำสั่งซื้อ (สำหรับ marketplace บรรทัดละคู่)
-          <textarea className="text-input payload-input" rows={2} placeholder="TH012345678912A 241002ABCDEF" value={orders} onChange={(e) => setOrders(e.target.value)} />
-        </label>
-      )}
-      <DeliveryStatus className="fill" track={track} />
-      <Raw result={result} />
-    </div>
-  );
-};
-
-export const Tester = () => {
-  const [tab, setTab] = useState("post");
   return (
     <section className="example" id="tester">
       <div className="example-head">
         <h2>ลองกับ API จริง</h2>
-        <p>ใส่ key แล้วกรอกเลขพัสดุจริง กดตรวจสอบเพื่อดูว่าสถานะขึ้นไหม ด้านล่างแสดงคำตอบจาก API ของแต่ละเลข เอาไว้ดูว่า key ใช้ได้หรือติดตรงไหน</p>
+        <p>เลือก provider แล้วพิมพ์ key ลงช่องด้านล่าง กรอกเลขพัสดุจริงแล้วกดตรวจสอบ ใต้ช่องกรอกจะบอกผลของแต่ละเลขว่าเจอหรือติดตรงไหน</p>
       </div>
-      <div className="segmented tester-tabs" role="group" aria-label="วิธีทดสอบ">
-        <button type="button" aria-pressed={tab === "post"} onClick={() => setTab("post")}>
-          ไปรษณีย์ไทย (ในเบราว์เซอร์)
-        </button>
-        <button type="button" aria-pressed={tab === "local"} onClick={() => setTab("local")}>
-          ทุก provider (server ในเครื่อง)
-        </button>
+
+      <div className="tester-body">
+        <label className="field fill">
+          Provider
+          <select
+            className="text-input"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setResult(null);
+            }}
+          >
+            {Object.entries(KIND_LABEL).map(([kind, label]) => (
+              <optgroup key={kind} label={label}>
+                {ENV_PROVIDERS.filter((p) => p.kind === kind).map((p) => (
+                  <option key={p.name} value={p.name}>
+                    {p.title}
+                    {BROWSER_OK.has(p.name) ? "" : " · ต้องใช้ server ในเครื่อง"}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+
+        <p className={`tester-route tester-route--${route}`}>
+          {route === "browser" && "ส่งตรงจากเบราว์เซอร์ไปที่ API ของเจ้านี้ ไม่ผ่าน server ของเรา"}
+          {route === "local" && "ส่งผ่าน server ในเครื่องคุณ (npm run playground) key ไปแค่ localhost"}
+          {route === "blocked" && "เจ้านี้ทดสอบจากหน้าเว็บตรง ๆ ไม่ได้ ต้องใช้ server ในเครื่อง"}
+        </p>
+
+        {route === "blocked" ? (
+          <LocalSteps onRetry={checkLocal} />
+        ) : (
+          <>
+            <div className="tester-grid">
+              {provider.env.map((v) => (
+                <label key={v.key} className="field">
+                  <span>
+                    {v.key}
+                    {!v.required && <span className="tester-optional"> (ไม่บังคับ)</span>}
+                  </span>
+                  <input
+                    className="text-input tester-key"
+                    type={show || !v.required ? "text" : "password"}
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder={v.note}
+                    value={typed[v.key] ?? ""}
+                    onChange={(e) => set(v.key, e.target.value)}
+                  />
+                </label>
+              ))}
+              {isMarketplace && (
+                <label className="field">
+                  access token ของร้าน
+                  <input
+                    className="text-input tester-key"
+                    type={show ? "text" : "password"}
+                    autoComplete="off"
+                    spellCheck={false}
+                    value={accessToken}
+                    onChange={(e) => setAccessToken(e.target.value)}
+                  />
+                </label>
+              )}
+            </div>
+            {isMarketplace && (
+              <label className="field fill">
+                เลขพัสดุ → เลขคำสั่งซื้อ (marketplace ค้นจากเลขคำสั่งซื้อ บรรทัดละคู่)
+                <textarea className="text-input payload-input" rows={2} placeholder="TH012345678912A 241002ABCDEF" value={orders} onChange={(e) => setOrders(e.target.value)} />
+              </label>
+            )}
+            <div className="tester-row">
+              <button type="button" className="try" onClick={() => setShow(!show)}>
+                {show ? "ซ่อน key" : "แสดง key"}
+              </button>
+              {fromEnvFile && <span className="hint ok">ไม่ได้พิมพ์ key: ใช้ค่าจาก .env.local</span>}
+              {browserTracker?.error && <span className="hint bad">{browserTracker.error}</span>}
+            </div>
+            <p className="note hint-note">
+              key อยู่ในแท็บนี้เท่านั้น ไม่ถูกบันทึก ปิดแท็บแล้วหายไป
+              {name === "thailandPost" && (
+                <>
+                  {" "}
+                  ยังไม่มี token?{" "}
+                  <a href="https://track.thailandpost.co.th/developerGuide" target="_blank" rel="noreferrer">
+                    สมัครฟรีที่ไปรษณีย์ไทย
+                  </a>
+                </>
+              )}
+            </p>
+            {ready ? (
+              <DeliveryStatus key={name} className="fill" track={track} />
+            ) : (
+              <p className="tester-empty">ใส่ key ที่ไม่ได้เขียนว่า (ไม่บังคับ) ให้ครบ แล้วช่องกรอกเลขพัสดุจะขึ้นตรงนี้</p>
+            )}
+            <Raw result={result} />
+          </>
+        )}
       </div>
-      {tab === "post" ? <ThailandPostTester /> : <LocalTester />}
     </section>
   );
 };
