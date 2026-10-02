@@ -981,3 +981,14 @@ main.wrap {
   align-items: flex-start;
   gap: 10px;
 }
+
+.tester-pick {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}

@@ -7,6 +7,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { DeliveryStatus } from "../src/index.js";
 import { createTracker } from "../src/server.js";
 import { ENV_PROVIDERS } from "../src/providers/env.js";
+import { getCarrier } from "../src/core.js";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -24,8 +25,54 @@ const ERROR_HINTS = {
   provider_error: "เรียก API ไม่สำเร็จ ดูรายละเอียดด้านล่าง",
 };
 
+/** The carrier's own API, if the package has one. */
+const OWN_API = { "thailand-post": "thailandPost", flash: "flash", ninjavan: "ninjaVan", jt: "jt", "dhl-ecommerce": "dhlEcommerce" };
+
+/** Providers that can track this carrier, cheapest first (marketplaces left out: they need an order id). */
+const providersFor = (carrierId) => {
+  const c = getCarrier(carrierId);
+  if (!c) return [];
+  const names = [
+    OWN_API[c.id],
+    c.eTrackings && "eTrackings",
+    c.trackingMore && "trackingMore",
+    c.track17 && "track17",
+    c.track123 && "track123",
+    c.afterShip && "afterShip",
+    "ship24",
+  ].filter(Boolean);
+  return names.map((n) => ENV_PROVIDERS.find((p) => p.name === n));
+};
+
+/** "eTrackings ไม่รองรับ ไปรษณีย์ไทย ลองเลือก provider: Thailand Post, …" */
+const UnsupportedHint = ({ shipment, provider, onPick }) => {
+  const carrier = getCarrier(shipment.carrier);
+  const short = provider.title.replace(/\s*\(.*\)$/, "");
+  if (!carrier) return <span className="tester-detail">ไม่รู้ว่าเลขนี้เป็นขนส่งไหน เลือกขนส่งที่ป้ายของเลข แล้วกดตรวจอีกครั้ง</span>;
+  const others = providersFor(carrier.id).filter((p) => p.name !== provider.name);
+  return (
+    <span className="tester-detail">
+      เลขนี้เป็นของ {carrier.th} ซึ่ง {short} ไม่รองรับ (ไม่เสียโควตา เพราะไม่ได้ส่งไป)
+      {others.length > 0 && (
+        <>
+          {" "}
+          ลองเลือก provider:{" "}
+          {others.map((p, i) => (
+            <React.Fragment key={p.name}>
+              {i > 0 && ", "}
+              <button type="button" className="tester-pick" onClick={() => onPick(p.name)}>
+                {p.title.replace(/\s*\(.*\)$/, "")}
+              </button>
+            </React.Fragment>
+          ))}
+        </>
+      )}
+    </span>
+  );
+};
+
 /** What came back, per number: enough to tell whether the keys work. */
-const Raw = ({ result }) => {
+const Raw = ({ result, provider, onPick }) => {
   if (!result) return null;
   if (result.error) {
     return (
@@ -44,7 +91,8 @@ const Raw = ({ result }) => {
             <dd>
               {s.error ? (
                 <span className="hint bad">
-                  {s.error}: {ERROR_HINTS[s.error]}
+                  {s.error}: {s.error === "unsupported" ? "provider นี้ไม่รองรับขนส่งของเลขนี้" : ERROR_HINTS[s.error]}
+                  {s.error === "unsupported" && <UnsupportedHint shipment={s} provider={provider} onPick={onPick} />}
                   {/rejected the token/.test(s.detail ?? "") && <span className="tester-detail">token ไม่ถูกต้องหรือถูกยกเลิก ตรวจว่าคัดลอกมาครบ</span>}
                   {/Failed to fetch|NetworkError|Load failed/i.test(s.detail ?? "") && (
                     <span className="tester-detail">เบราว์เซอร์ส่งไม่ถึง API (ถูกบล็อกหรือเน็ตมีปัญหา) ลองผ่าน server ในเครื่อง</span>
@@ -278,7 +326,14 @@ export const Tester = () => {
             ) : (
               <p className="tester-empty">ใส่ key ที่ไม่ได้เขียนว่า (ไม่บังคับ) ให้ครบ แล้วช่องกรอกเลขพัสดุจะขึ้นตรงนี้</p>
             )}
-            <Raw result={result} />
+            <Raw
+              result={result}
+              provider={provider}
+              onPick={(next) => {
+                setName(next);
+                setResult(null);
+              }}
+            />
           </>
         )}
       </div>
